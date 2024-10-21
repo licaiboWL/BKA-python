@@ -1,17 +1,24 @@
 import numpy as np
+from sympy.codegen import Print
 
 
 def initialization(N, Dim, UB, LB):
-    B_no = len(UB)  # Number of boundaries
-
-    if B_no == 1:
+    # B_no = len(UB[0])  # Number of boundaries
+    # print(UB)
+    if not isinstance(UB[0], list):
         X = (np.random.rand(N, Dim) * (UB[0] - LB[0])) + LB[0]
     else:
+        UB = UB[0]
+        LB = LB[0]
         X = np.zeros((N, Dim))
         for i in range(Dim):
             Ub_i = UB[i]
             Lb_i = LB[i]
-            X[:, i] = (np.random.rand(N, 1) * (Ub_i - Lb_i)) + Lb_i
+            # print(Lb_i)
+            base_i = np.random.rand(N, 1) * (Ub_i - Lb_i)
+            base_lb = np.ones((N, 1))*Lb_i
+            # print(base_i, base_lb)
+            X[:, i] = (base_i + base_lb).squeeze()
 
     return X
 
@@ -22,7 +29,7 @@ def BKA(pop, T, lb, ub, dim, fobj):
     p = 0.9
     XPos = initialization(pop, dim, ub, lb)
     XFit = [fobj(X) for X in XPos]
-    Convergence_curve = np.zeros(T)
+    Convergence_curve = []
 
     # Start iteration
     Best_Fitness_BKA = float('inf')
@@ -51,10 +58,12 @@ def BKA(pop, T, lb, ub, dim, fobj):
         for i in range(pop):
             r = np.random.rand()
             m = 2 * np.sin(r + np.pi / 2)
-            s = np.random.randint(1, pop)
+            s = np.random.randint(0, pop)
             r_XFitness = XFit[s]
             ori_value = np.random.rand(dim)
-            cauchy_value = np.tan((ori_value - 0.5) * np.pi)
+            cauchy_value = np.random.standard_cauchy(dim)
+            # cauchy_value = (1/np.pi) * (1/(ori_value**2 + 1))
+            # cauchy_value = np.tan((ori_value - 0.5) * np.pi)
 
             if XFit[i] < r_XFitness:
                 XPosNew = XPos[i] + cauchy_value * (XPos[i] - XLeader_Pos)
@@ -71,17 +80,17 @@ def BKA(pop, T, lb, ub, dim, fobj):
         # Update the optimal Black-winged Kite
         for i in range(pop):
             if XFit[i] < XLeader_Fit:
-                Best_Fitness_BKA = XFit[i]
+                Best_Fitness_BKA = min(Best_Fitness_BKA, XFit[i])
                 Best_Pos_BKA = XPos[i,:]
             else:
-                Best_Fitness_BKA = XLeader_Fit
+                Best_Fitness_BKA = min(Best_Fitness_BKA, XLeader_Fit)
                 Best_Pos_BKA = XLeader_Pos
 
         # Best_Fitness_BKA = min(Best_Fitness_BKA, XLeader_Fit)
         # Best_Pos_BKA = XLeader_Pos
-        Convergence_curve[t] = Best_Fitness_BKA
+        Convergence_curve.append(Best_Fitness_BKA)
 
-    return Best_Fitness_BKA, Best_Pos_BKA, Convergence_curve
+    return Best_Fitness_BKA, Convergence_curve
 
 
 if __name__ == "__main__":
@@ -90,12 +99,11 @@ if __name__ == "__main__":
         return np.sum(inx ** 2)  # Example objective function
 
     pop = 20
-    T = 100000
+    T = 10000
     lb = [-100]
     ub = [100]
     dim = 30
     p = 0.9
 
-    Best_Fit_BKA, BPos_BKA, Convergence_curve = BKA(pop, T, lb, ub, dim, example_obj)
+    Best_Fit_BKA, Convergence_curve = BKA(pop, T, lb, ub, dim, example_obj)
     print("Best Fitness:", Best_Fit_BKA)
-    print("Best Position:", BPos_BKA)
