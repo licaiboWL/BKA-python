@@ -22,7 +22,7 @@ print(BKA_score, BKA_pos)
 CNT = 80
 k = np.round(np.linspace(1, Max_iterations-1, CNT)).astype(int)  # 随机选CNT个点
 iter_ = np.arange(1, Max_iterations + 1)
-plt.subplot(1, 1, 2)
+plt.subplot(1, 1, 1)
 plt.plot(iter_[k], BKA_Convergence_curve[k], 'r->', linewidth=1)
 plt.grid(True)
 plt.title('收敛曲线')
