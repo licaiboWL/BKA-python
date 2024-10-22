@@ -5,6 +5,14 @@ from bka import BKA
 from argparse import ArgumentParser
 import os
 import json
+import multiprocessing
+
+
+def run_bka_once(args):
+    
+    search_agents, iteration, lb, ub, dim, fobj = args
+    BKA_score, Best_Pos_BKA, BKA_Convergence_curve = BKA(search_agents, iteration, [lb], [ub], dim, fobj)
+    return BKA_score, Best_Pos_BKA, BKA_Convergence_curve
 
 
 def train(dataset, fuction, iteration, repeat_times, search_agents=30):
@@ -13,8 +21,11 @@ def train(dataset, fuction, iteration, repeat_times, search_agents=30):
     bka_list = []
     cur_list = []
     pose_list = []
-    for _ in range(repeat_times):
-        BKA_score, Best_Pos_BKA, BKA_Convergence_curve = BKA(search_agents, iteration, [lb], [ub], dim, fobj)  # 调用BKA算法
+    params = [(search_agents, iteration, lb, ub, dim, fobj) for _ in range(repeat_times)]
+    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+        results = pool.map(run_bka_once, params)
+
+    for BKA_score, Best_Pos_BKA, BKA_Convergence_curve in results:
         bka_list.append(BKA_score)
         pose_list.append(Best_Pos_BKA)
         cur_list.append(BKA_Convergence_curve)
