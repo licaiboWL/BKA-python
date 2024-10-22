@@ -1,5 +1,5 @@
 import numpy as np
-
+from tqdm import tqdm
 
 def initialization(N, Dim, UB, LB):
     # B_no = len(UB[0])  # Number of boundaries
@@ -34,7 +34,7 @@ def BKA(pop, T, lb, ub, dim, fobj):
     Best_Fitness_BKA = float('inf')
     Best_Pos_BKA = None
 
-    for t in range(0, T):
+    for t in tqdm(range(0, T)):
         sorted_indexes = np.argsort(XFit)
         XLeader_Pos = XPos[sorted_indexes[0]]
         XLeader_Fit = XFit[sorted_indexes[0]]
