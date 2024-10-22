@@ -39,7 +39,7 @@ def save_result(Best_score, Best_Pos, Convergence_curve, dataset, fuction, itera
     plt.subplot(1, 1, 1)
     plt.plot(iter_[k], np.array(Convergence_curve)[k], 'r->', linewidth=1)
     plt.grid(True)
-    plt.title(fuction + 'convergence curve')
+    plt.title(fuction + ' convergence curve')
     plt.xlabel('iterations')
     plt.ylabel('fitness value')
     plt.legend(['BKA'])
