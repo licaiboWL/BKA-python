@@ -1,47 +1,62 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from all_fun import CEC2005
+import all_fun
 from bka import BKA
-import matplotlib
+from argparse import ArgumentParser
+import os
+import json
 
 
-matplotlib.rc("font", family='Microsoft YaHei')
-# 参数设置
-SearchAgents = 30  # 种群成员数量
-Max_iterations = 1000  # 最大迭代次数
-number = 'F21'  # 选定优化函数，自行替换:F1~F23
+def train(dataset, fuction, iteration, repeat_times, search_agents=30):
 
-# 加载函数数据 fobj, lb, ub, dim
-fobj, lb, ub, dim = CEC2005(number)  # [lb,ub,D,y]：下界、上界、维度、目标函数表达式
+    fobj, lb, ub, dim = getattr(all_fun, dataset)(fuction)
+    bka_list = []
+    cur_list = []
+    pose_list = []
+    for _ in range(repeat_times):
+        BKA_score, Best_Pos_BKA, BKA_Convergence_curve = BKA(search_agents, iteration, [lb], [ub], dim, fobj)  # 调用BKA算法
+        bka_list.append(BKA_score)
+        pose_list.append(Best_Pos_BKA)
+        cur_list.append(BKA_Convergence_curve)
 
-# 调用算法
-bka_list = []
-cur_list = []
-for i in range(20):
-    BKA_score, BKA_Convergence_curve = BKA(SearchAgents, Max_iterations, [lb], [ub], dim, fobj)  # 调用BKA算法
-    bka_list.append(BKA_score)
-    cur_list.append(BKA_Convergence_curve)
-# print(BKA_score, BKA_pos)
-min_v = 1000
-min_i = 1
-j = 0
-for m in bka_list:
-    if m < min_v:
-        min_v = m
-        min_i = j
-    j += 1
-# 绘制收敛曲线
-print(min_v)
-CNT = 80
-k = np.round(np.linspace(1, Max_iterations-1, CNT)).astype(int)  # 随机选CNT个点
-iter_ = np.arange(1, Max_iterations + 1)
-plt.subplot(1, 1, 1)
-# plt.plot(iter_[k], np.array(BKA_Convergence_curve)[k], 'r->', linewidth=1)
-plt.plot(iter_[k], np.array(cur_list[min_i])[k], 'r->', linewidth=1)
-plt.grid(True)
-plt.title(number + '收敛曲线')
-plt.xlabel('迭代次数')
-plt.ylabel('适应度值')
-plt.legend(['BKA'])
+    min_index = min(enumerate(bka_list), key=lambda x: x[1])[0]
+    print("objective function value: ", bka_list[min_index])
 
-plt.show()
+    return bka_list[min_index], pose_list[min_index], cur_list[min_index]
+
+
+def save_result(Best_score, Best_Pos, Convergence_curve, dataset, fuction, iteration):
+    
+    OUTPUT_PATH = f"output/{dataset}/{fuction}/"
+    CNT = 100
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
+    data = {'Best_score': float(Best_score), 'Best_Pos': Best_Pos.tolist()}
+    with open(f'{OUTPUT_PATH}/result.json', 'w') as f:
+        json.dump(data, f)
+
+    k = np.round(np.linspace(1, iteration-1, CNT)).astype(int)  # Randomly selected points
+    iter_ = np.arange(1, iteration + 1)
+    plt.subplot(1, 1, 1)
+    plt.plot(iter_[k], np.array(Convergence_curve)[k], 'r->', linewidth=1)
+    plt.grid(True)
+    plt.title(fuction + 'convergence curve')
+    plt.xlabel('iterations')
+    plt.ylabel('fitness value')
+    plt.legend(['BKA'])
+    plt.savefig(OUTPUT_PATH + 'convergence_curve.png')
+    print(f"Result stored in {OUTPUT_PATH}")
+
+
+if __name__ == "__main__":
+    # Set up command line argument parser
+    parser = ArgumentParser(description="Main script parameters")
+    parser.add_argument("--dataset", default="CEC2005", type=str)
+    parser.add_argument("--fuction", default="F1", type=str)
+    parser.add_argument("--iteration", default=2000, type=int)
+    parser.add_argument("--repeat_times", default=1, type=int)
+    parser.add_argument("--search_agents", default=30, type=int)
+    args = parser.parse_args()
+    print(f"Start training: {args.dataset} {args.fuction} for {args.repeat_times} times each {args.iteration} iterations")
+
+    Best_score, Best_Pos, Convergence_curve = train(args.dataset, args.fuction, args.iteration, args.repeat_times, args.search_agents)
+    save_result(Best_score, Best_Pos, Convergence_curve, args.dataset, args.fuction, args.iteration)

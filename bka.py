@@ -1,5 +1,4 @@
 import numpy as np
-from sympy.codegen import Print
 
 
 def initialization(N, Dim, UB, LB):
@@ -61,9 +60,9 @@ def BKA(pop, T, lb, ub, dim, fobj):
             s = np.random.randint(0, pop)
             r_XFitness = XFit[s]
             ori_value = np.random.rand(dim)
-            cauchy_value = np.random.standard_cauchy(dim)
+            # cauchy_value = np.random.standard_cauchy(dim)
             # cauchy_value = (1/np.pi) * (1/(ori_value**2 + 1))
-            # cauchy_value = np.tan((ori_value - 0.5) * np.pi)
+            cauchy_value = np.tan((ori_value - 0.5) * np.pi)
 
             if XFit[i] < r_XFitness:
                 XPosNew = XPos[i] + cauchy_value * (XPos[i] - XLeader_Pos)
@@ -90,20 +89,21 @@ def BKA(pop, T, lb, ub, dim, fobj):
         # Best_Pos_BKA = XLeader_Pos
         Convergence_curve.append(Best_Fitness_BKA)
 
-    return Best_Fitness_BKA, Convergence_curve
+    return Best_Fitness_BKA, Best_Pos_BKA, Convergence_curve
 
 
 if __name__ == "__main__":
-# Example usage
+    
+    # Example usage
     def example_obj(inx):
         return np.sum(inx ** 2)  # Example objective function
 
     pop = 20
-    T = 10000
+    T = 3000
     lb = [-100]
     ub = [100]
     dim = 30
     p = 0.9
 
-    Best_Fit_BKA, Convergence_curve = BKA(pop, T, lb, ub, dim, example_obj)
+    Best_Fit_BKA, Best_Pos_BKA, Convergence_curve = BKA(pop, T, lb, ub, dim, example_obj)
     print("Best Fitness:", Best_Fit_BKA)
